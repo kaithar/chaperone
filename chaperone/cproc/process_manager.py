@@ -178,7 +178,7 @@ class TopLevelProcess(objectplus):
         self.activate(self._final_system_stop())
 
     async def _final_system_stop(self):
-        yield from asyncio.sleep(0.1)
+        await asyncio.sleep(0.1)
         if self._syslog:
             self._syslog.close()
         if self._command:
@@ -209,7 +209,7 @@ class TopLevelProcess(objectplus):
         while self._status_interval:
             if self._family:
                 self.notify.status(self._family.get_status())
-                yield from asyncio.sleep(self._status_interval)
+                await asyncio.sleep(self._status_interval)
 
     def kill_system(self, errno = None, force = False):
         """
@@ -249,11 +249,11 @@ class TopLevelProcess(objectplus):
 
         if self._family:
             for f in self._family.values():
-                yield from f.final_stop()
+                await f.final_stop()
             # let normal shutdown happen
             if self._watcher.number_of_waiters > 0 and self._shutdown_timeout:
                 debug("still have {0} waiting, sleeping for shutdown_timeout={1}".format(self._watcher.number_of_waiters, self._shutdown_timeout))
-                yield from asyncio.sleep(self._shutdown_timeout)
+                await asyncio.sleep(self._shutdown_timeout)
                 wait_done = True
 
         try:
@@ -266,9 +266,9 @@ class TopLevelProcess(objectplus):
             return
 
         if wait_done:                   # give a short wait just so the signals fire
-            yield from asyncio.sleep(1) # these processes are unknowns
+            await asyncio.sleep(1) # these processes are unknowns
         else:
-            yield from asyncio.sleep(self._shutdown_timeout)
+            await asyncio.sleep(self._shutdown_timeout)
             
         if self._all_killed:
             return
@@ -307,14 +307,14 @@ class TopLevelProcess(objectplus):
 
     async def _start_system_services(self):
 
-        self._notify_enabled = yield from self.notify.connect()
+        self._notify_enabled = await self.notify.connect()
 
         if self.enable_syslog:
             self._syslog = SyslogServer()
             self._syslog.configure(self._config, self._minimum_syslog_level)
 
             try:
-                yield from self._syslog.run()
+                await self._syslog.run()
             except PermissionError as ex:
                 self._syslog = None
                 warn("syslog service cannot be started: {0}", ex)
@@ -325,7 +325,7 @@ class TopLevelProcess(objectplus):
         self._command = CommandServer(self)
 
         try:
-            yield from self._command.run()
+            await self._command.run()
         except PermissionError as ex:
             self._command = None
             warn("command service cannot be started: {0}", ex)
@@ -366,7 +366,7 @@ class TopLevelProcess(objectplus):
         errno = None
 
         try:
-            tried_any = yield from family.run()
+            tried_any = await family.run()
         except asyncio.CancelledError:
             pass
         finally:

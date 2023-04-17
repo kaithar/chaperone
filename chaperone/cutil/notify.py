@@ -45,7 +45,7 @@ class NotifyListener(Server):
         
     async def send(self, message):
         if not self.server:
-            yield from self.run()
+            await self.run()
 
         self.server[0].sendto(message.encode(), self.bind_name)
 
@@ -57,7 +57,7 @@ class NotifyListener(Server):
         # Clients connect to an existing socket
         if self.is_client:
             loop = asyncio.get_event_loop()
-            yield from loop.sock_connect(transport._sock, bindname)
+            await loop.sock_connect(transport._sock, bindname)
             return
 
         # Servers set up a binding to a new one
@@ -155,7 +155,7 @@ class NotifySink:
 
     async def _do_send(self, msg):
         if self._client:
-            yield from self._client.send(msg)
+            await self._client.send(msg)
 
     async def connect(self, socket = None):
         """
@@ -175,7 +175,7 @@ class NotifySink:
                                     onError = lambda which,exc: debug("{0} error, notifications disabled".format(socket)))
 
         try:
-            yield from self._client.run()
+            await self._client.run()
         except OSError as ex:
             debug("could not connect to notify socket '{0} ({1})".format(socket, ex))
             self.close()

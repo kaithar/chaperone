@@ -26,7 +26,7 @@ class NotifyProcess(SubProcess):
         if not self._listener:
             self._listener = NotifyListener('@/chaperone/' + self.service.name,
                                             onNotify = self._notify_received)
-            yield from self._listener.run()
+            await self._listener.run()
 
         environ['NOTIFY_SOCKET'] = self._listener.socket_name
 
@@ -45,11 +45,11 @@ class NotifyProcess(SubProcess):
         raise ChProcessError(message)
 
     async def reset(self, dependents = False, enable = False, restarts_ok = False):
-        yield from super().reset(dependents, enable, restarts_ok)
+        await super().reset(dependents, enable, restarts_ok)
         self._close_listener()
 
     async def final_stop(self):
-        yield from super().final_stop()
+        await super().final_stop()
         self._close_listener()
 
     async def process_started_co(self):
@@ -57,7 +57,7 @@ class NotifyProcess(SubProcess):
             self._fut_monitor.cancel()
             self._fut_monitor = None
 
-        yield from self.do_startup_pause()
+        await self.do_startup_pause()
 
         self._fut_monitor = asyncio.ensure_future(self._monitor_service())
         self.add_pending(self._fut_monitor)
@@ -66,7 +66,7 @@ class NotifyProcess(SubProcess):
             try:
                 if not self.process_timeout:
                     raise asyncio.TimeoutError()
-                yield from asyncio.wait_for(self._ready_event.wait(), self.process_timeout)
+                await asyncio.wait_for(self._ready_event.wait(), self.process_timeout)
             except asyncio.TimeoutError:
                 self._ready_event = None
                 self._notify_timeout()
@@ -85,12 +85,12 @@ class NotifyProcess(SubProcess):
         We only care about errors here.  The rest is dealt with by having notifications
         occur.
         """
-        result = yield from self.wait()
+        result = await self.wait()
         if isinstance(result, int) and result > 0:
             self._setready()    # simulate ready
             self._ready_event = None
             self._close_listener()
-            yield from self._abnormal_exit(result)
+            await self._abnormal_exit(result)
             
     def _notify_received(self, which, var, value):
         callfunc = getattr(self, "notify_" + var.upper(), None)

@@ -42,8 +42,8 @@ class Server:
 
     async def run(self):
         self.loop = asyncio.get_event_loop()
-        self.server = yield from self._create_server()
-        yield from self.server_running()
+        self.server = await self._create_server()
+        await self.server_running()
 
     async def server_running(self):
         pass

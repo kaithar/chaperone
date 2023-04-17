@@ -169,9 +169,9 @@ class SDNotifyExec:
 
         if not self.parent_client:
             self.parent_client = NotifyClient(parent_socket, onClose = self._parent_closed)
-            yield from self.parent_client.run()
+            await self.parent_client.run()
 
-        yield from self.parent_client.send("{0}={1}".format(name, value))
+        await self.parent_client.send("{0}={1}".format(name, value))
 
     def send_to_proxy(self, name, value):
         asyncio.ensure_future(self._do_proxy_send(name, value))
@@ -202,7 +202,7 @@ class SDNotifyExec:
                                                                                   
     async def _notify_timeout(self):
         self.info("waiting {0} seconds for notification".format(self.timeout))
-        yield from asyncio.sleep(self.timeout)
+        await asyncio.sleep(self.timeout)
         print("ERROR: Timeout exceeded while waiting for notification from '{0}'".format(self.proc_args[0]))
         self.kill_program(1)
 
@@ -211,25 +211,25 @@ class SDNotifyExec:
         self.info('running: {0}'.format(self.proc_args[0]))
 
         create = asyncio.create_subprocess_exec(*self.proc_args, start_new_session=bool(self.wait_mode))
-        proc = yield from create
+        proc = await create
 
         if self.timeout:
             asyncio.ensure_future(self._notify_timeout())
 
-        exitcode = yield from proc.wait()
+        exitcode = await proc.wait()
         if not self.exitcode:   # may have arrived from ERRNO
             self.exitcode = exitcode
 
     async def run(self):
 
         try:
-            yield from self.listener.run()
+            await self.listener.run()
         except ValueError as ex:
             print("Error while trying to create socket: " + str(ex))
             self.kill_program()
         else:
             try:
-                yield from self._run_process()
+                await self._run_process()
             except Exception as ex:
                 print("Error running command: " + str(ex))
                 self.kill_program()

@@ -60,13 +60,13 @@ class InetdServiceProtocol(ServerProtocol):
         create = asyncio.create_subprocess_exec(*service.exec_args, preexec_fn=process._setup_subprocess,
                                                 env=env, **kwargs)
 
-        proc = self._proc = yield from create
+        proc = self._proc = await create
         self.pid = proc.pid
 
         process.logdebug("{0} instance connected to port {1}", service.name, service.port)
 
         process.add_process(proc)
-        yield from proc.wait()
+        await proc.wait()
         process.remove_process(proc)
 
         if not proc.returncode.normal_exit:
@@ -123,7 +123,7 @@ class InetdProcess(SubProcess):
         """
         
         self.server = InetdService(self)
-        yield from self.server.run()
+        await self.server.run()
 
         self.loginfo("inetd service {0} listening on port {1}".format(self.name, self.port))
 
@@ -136,7 +136,7 @@ class InetdProcess(SubProcess):
             self.logwarn("{0} terminating {1} processes on port {2} that are still running".format(self.name, len(plist), self.port))
             for p in plist:
                 p.terminate()
-        yield from super().reset(dependents, enable, restarts_ok)
+        await super().reset(dependents, enable, restarts_ok)
 
     async def final_stop(self):
-        yield from self.reset()
+        await self.reset()

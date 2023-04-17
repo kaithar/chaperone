@@ -126,7 +126,7 @@ class RemoteHandler(LogOutput):
         loop = asyncio.get_event_loop()
         connect = loop.create_datagram_endpoint(lambda: RemoteClientProtocol(loop),
                                                 remote_addr=(self.config.syslog_host, 514))
-        (transport, protocol) = yield from connect
+        (transport, protocol) = await connect
         self._pending = None
         self._protocol = protocol
 

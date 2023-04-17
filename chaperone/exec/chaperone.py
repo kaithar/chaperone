@@ -224,7 +224,7 @@ def main_entry():
                                              stderr='inherit', stdout='inherit')
          extra_services = [cmdsvc]
 
-      yield from tlp.run_services(extra_services, disable_others = options['--disable-services'])
+      await tlp.run_services(extra_services, disable_others = options['--disable-services'])
 
       tlp.signal_ready()
 

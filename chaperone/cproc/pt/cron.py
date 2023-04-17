@@ -69,10 +69,10 @@ class CronProcess(SubProcess):
             else:
                 self.loginfo("cron service {0} running CMD ( {1} )", self.name, self.command)
                 try:
-                    yield from super().start()
+                    await super().start()
                 except Exception as ex:
                     self.logerror(ex, "cron service {0} failed to start: {1}", self.name, ex)
-                    yield from self.reset();
+                    await self.reset();
 
     @property
     def stoppable(self):
@@ -80,7 +80,7 @@ class CronProcess(SubProcess):
 
     async def stop(self):
         self._cron.stop()
-        yield from super().stop()
+        await super().stop()
 
     async def process_started_co(self):
         if self._fut_monitor and not self._fut_monitor.cancelled():
@@ -93,8 +93,8 @@ class CronProcess(SubProcess):
         self.add_pending(self._fut_monitor)
 
     async def _monitor_service(self):
-        result = yield from self.wait()
+        result = await self.wait()
         if isinstance(result, int) and result > 0:
-            yield from self._abnormal_exit(result)
+            await self._abnormal_exit(result)
         else:
-            yield from self.reset()
+            await self.reset()

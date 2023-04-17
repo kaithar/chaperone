@@ -1,6 +1,8 @@
 
-- Replaced use: asyncio.async was deprecated in 3.4.4 and removed in 3.7, replaced with ensure_future and targetting 3.4+
-- Replaced use: asyncio.coroutine was deprecated in 3.8 and removed in 3.11, replaced with `async def` and targetting 3.7+
+- Breaking: Due to modernising of the asyncio use, minimum Python version should be considered 3.7+ though it might work on 3.5+
+- Replaced use: asyncio.async was deprecated in 3.4.4 and removed in 3.7, replaced with ensure_future
+- Replaced use: asyncio.coroutine was deprecated in 3.8 and removed in 3.11, replaced with `async def`
+- Replaced use: `yield from` changed to `await`, should be deprecated as of 3.7
 
 ## 0.3.00 (2015-10-04)
 

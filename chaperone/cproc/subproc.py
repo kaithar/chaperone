@@ -20,7 +20,7 @@ from chaperone.cutil.format import TableFormatter
 async def _process_logger(stream, kind, service):
     name = service.name.replace('.service', '')
     while True:
-        data = yield from stream.readline()
+        data = await stream.readline()
         if not data:
             return
         line = data.decode('ascii', 'ignore').rstrip()
@@ -373,8 +373,8 @@ class SubProcess(object):
         cond_starting = self._cond_starting
 
         if cond_starting:
-            yield from cond_starting.acquire()
-            yield from cond_starting.wait()
+            await cond_starting.acquire()
+            await cond_starting.wait()
             cond_starting.release()
             # This is an odd situation.  Since every waiter expects start() to succeed, or
             # raise an exception, we need to be sure we raise the exception that happened
@@ -395,7 +395,7 @@ class SubProcess(object):
             prereq = self.prerequisites
             if prereq:
                 for p in prereq:
-                    yield from p.start()
+                    await p.start()
                 self.logdebug("service {0} prerequisites satisfied", service.name)
 
             if self.family:
@@ -403,14 +403,14 @@ class SubProcess(object):
                 if "IDLE" in service.service_groups and service.idle_delay and not hasattr(self.family, '_idle_hit'):
                     self.family._idle_hit = True
                     self.logdebug("IDLE transition hit.  delaying for {0} seconds", service.idle_delay)
-                    yield from asyncio.sleep(service.idle_delay)
+                    await asyncio.sleep(service.idle_delay)
 
                 # STOP if the system is no longer alive because a prerequisite failed
                 if not self.family.system_alive:
                     return
 
             try:
-                yield from self.start_subprocess()
+                await self.start_subprocess()
             except Exception as ex:
                 if service.ignore_failures:
                     self.loginfo("service {0} ignoring failures. Exception: {1}", service.name, ex)
@@ -422,7 +422,7 @@ class SubProcess(object):
         finally:
             self._started = True
 
-            yield from cond_starting.acquire()
+            await cond_starting.acquire()
             cond_starting.notify_all()
             cond_starting.release()
             self._cond_starting = None
@@ -451,7 +451,7 @@ class SubProcess(object):
 
         env = self.get_expanded_environment()
 
-        yield from self.process_prepare_co(env)
+        await self.process_prepare_co(env)
 
         if env:
             env = env.get_public_environment()
@@ -468,9 +468,9 @@ class SubProcess(object):
                                                 env=env, **kwargs)
         if service.exit_kills:
             self.logwarn("system will be killed when '{0}' exits", service.exec_args[0])
-            yield from asyncio.sleep(0.2)
+            await asyncio.sleep(0.2)
 
-        proc = self._proc = yield from create
+        proc = self._proc = await create
 
         self.pid = proc.pid
 
@@ -482,7 +482,7 @@ class SubProcess(object):
         if service.exit_kills and not self.defer_exit_kills:
             self.add_pending(asyncio.ensure_future(self._wait_kill_on_exit()))
 
-        yield from self.process_started_co()
+        await self.process_started_co()
 
         self.logdebug("{0} successfully started", service.name)
 
@@ -511,7 +511,7 @@ class SubProcess(object):
         while time() < expires:
             if not self.family.system_alive:
                 return
-            yield from asyncio.sleep(pidsleep)
+            await asyncio.sleep(pidsleep)
             # ramp up until we hit the minsleep ceiling
             pidsleep = min(pidsleep*2, minsleep)
             try:
@@ -534,7 +534,7 @@ class SubProcess(object):
                              self.name, self.pidfile, self.process_timeout), errno = errno.ENOENT)
         
     async def _wait_kill_on_exit(self):
-        yield from self.wait()
+        await self.wait()
         self._kill_system()
 
     def _attach_pid(self, newpid):
@@ -590,17 +590,17 @@ class SubProcess(object):
                 if controller.system_alive:
                     if service.restart_delay:
                         self.loginfo("{0} pausing between restart retries ({1} left)", service.name, self._restarts_allowed)
-                        yield from asyncio.sleep(service.restart_delay)
+                        await asyncio.sleep(service.restart_delay)
                 if controller.system_alive:
-                    yield from self.reset()
-                    #yield from self.start()
+                    await self.reset()
+                    #await self.start()
                     f = asyncio.ensure_future(self.start())  # queue it since we will just return here
                     f.add_done_callback(self._restart_callback)
                 return
 
         if service.ignore_failures:
             self.logdebug("{0} abnormal process exit ignored due to ignore_failures=true", service.name)
-            yield from self.reset()
+            await self.reset()
             return
 
         self.logerror("{0} terminated abnormally with {1}", service.name, code)
@@ -630,7 +630,7 @@ class SubProcess(object):
         elif self._proc:
             if self._proc.returncode is None:
                 self.terminate()
-                yield from self.wait()
+                await self.wait()
             self.pid = None
             self._proc = None
 
@@ -654,10 +654,10 @@ class SubProcess(object):
         if dependents:
             for p in self.prerequisites:
                 if not p.ready and (enable or p.enabled):
-                    yield from p.reset(dependents, enable, restarts_ok)
+                    await p.reset(dependents, enable, restarts_ok)
                 
     async def stop(self):
-        yield from self.reset(restarts_ok = True)
+        await self.reset(restarts_ok = True)
         
     async def final_stop(self):
         "Called when the whole system is killed, but before drastic measures are taken."
@@ -700,7 +700,7 @@ class SubProcess(object):
             return
 
         try:
-            result = yield from self.timed_wait(self.startup_pause)
+            result = await self.timed_wait(self.startup_pause)
         except asyncio.TimeoutError:
             result = None
         if result is not None and not result.normal_exit:
@@ -722,7 +722,7 @@ class SubProcess(object):
         try:
             if not timeout:
                 raise asyncio.TimeoutError() # funny situation, but settings can cause this if users attempt it
-            result =  yield from asyncio.wait_for(asyncio.shield(self.wait()), timeout)
+            result =  await asyncio.wait_for(asyncio.shield(self.wait()), timeout)
         except asyncio.TimeoutError:
             if not func:
                 raise
@@ -736,9 +736,9 @@ class SubProcess(object):
         proc = self._proc
 
         if self._exit_event:
-            yield from self._exit_event.wait()
+            await self._exit_event.wait()
         elif proc:
-            yield from proc.wait()
+            await proc.wait()
         else:
             raise Exception("Process not running (or attached), can't wait")
 
@@ -824,7 +824,7 @@ class SubProcessFamily(lazydict):
         # interdependencies themselves.
         if not servicelist:
             servicelist = self.values()
-        yield from asyncio.gather(*[s.start() for s in servicelist])
+        await asyncio.gather(*[s.start() for s in servicelist])
 
         self._start_time = time()
 
@@ -868,16 +868,16 @@ class SubProcessFamily(lazydict):
             resets = [s for s in slist if (not s.ready or s.started)]
 
         for s in resets:
-            yield from s.reset(dependents=True, enable=enable, restarts_ok=True)
+            await s.reset(dependents=True, enable=enable, restarts_ok=True)
 
         if not wait:
             asyncio.ensure_future(self._queued_start(slist, service_names))
         else:
-            yield from self.run(slist)
+            await self.run(slist)
 
     async def _queued_start(self, slist, names):
         try:
-            yield from self.run(slist)
+            await self.run(slist)
         except Exception as ex:
             error("queued start (for {0}) failed: {1}", names, ex)
             
@@ -894,14 +894,14 @@ class SubProcessFamily(lazydict):
             asyncio.ensure_future(self._queued_stop(slist, service_names, disable))
         else:
             for s in slist:
-                yield from s.stop()
+                await s.stop()
                 if disable:
                     s.enabled = False
 
     async def _queued_stop(self, slist, names, disable):
         try:
             for s in slist:
-                yield from s.stop()
+                await s.stop()
                 if disable:
                     s.enabled = False
         except Exception as ex:
@@ -919,12 +919,12 @@ class SubProcessFamily(lazydict):
             asyncio.ensure_future(self._queued_reset(slist, service_names))
         else:
             for s in slist:
-                yield from s.reset(restarts_ok = True)
+                await s.reset(restarts_ok = True)
 
     async def _queued_reset(self, slist, names):
         try:
             for s in slist:
-                yield from s.reset(restarts_ok = True)
+                await s.reset(restarts_ok = True)
         except Exception as ex:
             error("queued reset (for {0}) failed: {1}", names, ex)
 

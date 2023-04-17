@@ -13,10 +13,10 @@ class SimpleProcess(SubProcess):
         # We wait a short time just to see if the process errors out immediately.  This avoids a retry loop
         # and catches any immediate failures now.
 
-        yield from self.do_startup_pause()
+        await self.do_startup_pause()
 
         # If there is a pidfile, sit here and wait for a bit
-        yield from self.wait_for_pidfile()
+        await self.wait_for_pidfile()
 
         # We have a successful start.  Monitor this service.
 
@@ -24,6 +24,6 @@ class SimpleProcess(SubProcess):
         self.add_pending(self._fut_monitor)
 
     async def _monitor_service(self):
-        result = yield from self.wait()
+        result = await self.wait()
         if isinstance(result, int) and result > 0:
-            yield from self._abnormal_exit(result)
+            await self._abnormal_exit(result)
