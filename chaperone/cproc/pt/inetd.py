@@ -29,8 +29,7 @@ class InetdServiceProtocol(ServerProtocol):
         if self._fd is not None:
             os.close(self._fd)
 
-    @asyncio.coroutine
-    def start_socket_process(self, fd):
+    async def start_socket_process(self, fd):
         process = self.process
         service = process.service
 
@@ -118,8 +117,7 @@ class InetdProcess(SubProcess):
                 msg += "; running = " + str(len(self._proclist))
             return msg
 
-    @asyncio.coroutine
-    def start_subprocess(self):
+    async def start_subprocess(self):
         """
         Takes over process startup and sets up our own server socket.
         """
@@ -129,8 +127,7 @@ class InetdProcess(SubProcess):
 
         self.loginfo("inetd service {0} listening on port {1}".format(self.name, self.port))
 
-    @asyncio.coroutine
-    def reset(self, dependents = False, enable = False, restarts_ok = False):
+    async def reset(self, dependents = False, enable = False, restarts_ok = False):
         if self.server:
             self.server.close()
             self.server = None
@@ -141,6 +138,5 @@ class InetdProcess(SubProcess):
                 p.terminate()
         yield from super().reset(dependents, enable, restarts_ok)
 
-    @asyncio.coroutine
-    def final_stop(self):
+    async def final_stop(self):
         yield from self.reset()

@@ -5,8 +5,7 @@ class SimpleProcess(SubProcess):
 
     _fut_monitor = None
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         if self._fut_monitor and not self._fut_monitor.cancelled():
             self._fut_monitor.cancel()
             self._fut_monitor = None
@@ -24,8 +23,7 @@ class SimpleProcess(SubProcess):
         self._fut_monitor = asyncio.ensure_future(self._monitor_service())
         self.add_pending(self._fut_monitor)
 
-    @asyncio.coroutine
-    def _monitor_service(self):
+    async def _monitor_service(self):
         result = yield from self.wait()
         if isinstance(result, int) and result > 0:
             yield from self._abnormal_exit(result)

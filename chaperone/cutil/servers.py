@@ -40,14 +40,12 @@ class Server:
     def __init__(self, **kwargs):
         self.events = EventSource(**kwargs)
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
         self.loop = asyncio.get_event_loop()
         self.server = yield from self._create_server()
         yield from self.server_running()
 
-    @asyncio.coroutine
-    def server_running(self):
+    async def server_running(self):
         pass
 
     def close(self):

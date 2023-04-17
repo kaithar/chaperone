@@ -229,8 +229,7 @@ class SyslogServer(Server):
         return self.loop.create_datagram_endpoint(
             SyslogServerProtocol.buildProtocol(self), family=socket.AF_UNIX)
 
-    @asyncio.coroutine
-    def server_running(self):
+    async def server_running(self):
         # Bind the socket if it's a datagram
         if self._datagram:
             transport = self.server[0]

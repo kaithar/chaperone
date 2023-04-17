@@ -6,8 +6,7 @@ class ForkingProcess(SubProcess):
 
     defer_exit_kills = True
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         result = yield from self.timed_wait(self.process_timeout, self._exit_timeout)
         if result is not None and not result.normal_exit:
             if self.ignore_failures:

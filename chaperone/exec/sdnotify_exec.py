@@ -163,8 +163,7 @@ class SDNotifyExec:
             self.proxy_enabled = False
             self.parent_client = None
 
-    @asyncio.coroutine
-    def _do_proxy_send(self, name, value):
+    async def _do_proxy_send(self, name, value):
         if not (parent_socket and self.proxy_enabled):
             return
 
@@ -201,15 +200,13 @@ class SDNotifyExec:
             self.info(self.INFO_MESSAGE.get(name, self.INFO_MESSAGE['default']).
                       format(name, value, ' (ignored but passed on)' if self.proxy_enabled else ' (ignored)'))
                                                                                   
-    @asyncio.coroutine
-    def _notify_timeout(self):
+    async def _notify_timeout(self):
         self.info("waiting {0} seconds for notification".format(self.timeout))
         yield from asyncio.sleep(self.timeout)
         print("ERROR: Timeout exceeded while waiting for notification from '{0}'".format(self.proc_args[0]))
         self.kill_program(1)
 
-    @asyncio.coroutine
-    def _run_process(self):
+    async def _run_process(self):
 
         self.info('running: {0}'.format(self.proc_args[0]))
 
@@ -223,8 +220,7 @@ class SDNotifyExec:
         if not self.exitcode:   # may have arrived from ERRNO
             self.exitcode = exitcode
 
-    @asyncio.coroutine
-    def run(self):
+    async def run(self):
 
         try:
             yield from self.listener.run()

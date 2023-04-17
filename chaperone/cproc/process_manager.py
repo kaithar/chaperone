@@ -177,8 +177,7 @@ class TopLevelProcess(objectplus):
             self._kill_future.cancel()
         self.activate(self._final_system_stop())
 
-    @asyncio.coroutine
-    def _final_system_stop(self):
+    async def _final_system_stop(self):
         yield from asyncio.sleep(0.1)
         if self._syslog:
             self._syslog.close()
@@ -206,8 +205,7 @@ class TopLevelProcess(objectplus):
         if self._status_interval and self._family and self._notify_enabled:
             self.activate(self._report_status())
 
-    @asyncio.coroutine
-    def _report_status(self):
+    async def _report_status(self):
         while self._status_interval:
             if self._family:
                 self.notify.status(self._family.get_status())
@@ -238,8 +236,7 @@ class TopLevelProcess(objectplus):
             if not p.cancelled():
                 p.cancel()
 
-    @asyncio.coroutine
-    def _kill_system_co(self):
+    async def _kill_system_co(self):
 
         self.notify.stopping()
 
@@ -308,8 +305,7 @@ class TopLevelProcess(objectplus):
             future = self.activate(startup)
             future.add_done_callback(self._system_coro_check)
 
-    @asyncio.coroutine
-    def _start_system_services(self):
+    async def _start_system_services(self):
 
         self._notify_enabled = yield from self.notify.connect()
 
@@ -350,8 +346,7 @@ class TopLevelProcess(objectplus):
         if exit_when_done:
             exit(self._exitcode or 0)
 
-    @asyncio.coroutine
-    def run_services(self, extra_services, disable_others = False):
+    async def run_services(self, extra_services, disable_others = False):
         "Run all services."
 
         # First, determine our overall configuration for the services environment.

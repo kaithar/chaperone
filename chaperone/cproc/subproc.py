@@ -17,8 +17,7 @@ from chaperone.cutil.misc import lazydict, lookup_user, get_signal_name, executa
 from chaperone.cutil.errors import ChNotFoundError, ChProcessError, ChParameterError
 from chaperone.cutil.format import TableFormatter
 
-@asyncio.coroutine
-def _process_logger(stream, kind, service):
+async def _process_logger(stream, kind, service):
     name = service.name.replace('.service', '')
     while True:
         data = yield from stream.readline()
@@ -347,8 +346,7 @@ class SubProcess(object):
             prereq = self._prereq_cache = tuple(self.family[p] for p in prereq if p in self.family)
         return self._prereq_cache
 
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Runs this service if it is enabled and has not already been started.  Starts
         prerequisite services first.  A service is considered started if
@@ -437,8 +435,7 @@ class SubProcess(object):
         penv[ENV_SERVTIME] = str(int(time()))
         return penv.expanded()
 
-    @asyncio.coroutine
-    def start_subprocess(self):
+    async def start_subprocess(self):
         service = self.service
 
         self.logdebug("{0} attempting start '{1}'... ".format(service.name, " ".join(service.exec_args)))
@@ -489,16 +486,13 @@ class SubProcess(object):
 
         self.logdebug("{0} successfully started", service.name)
 
-    @asyncio.coroutine
-    def process_prepare_co(self, environment):
+    async def process_prepare_co(self, environment):
         pass
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         pass
 
-    @asyncio.coroutine
-    def wait_for_pidfile(self):
+    async def wait_for_pidfile(self):
         """
         If the pidfile option was specified, then wait until we find a valid pidfile,
         and register the new PID.  This is not done automatically, but is implemented
@@ -539,8 +533,7 @@ class SubProcess(object):
         raise ChProcessError("{0} did not find pid file '{1}' before {2}sec process_timeout expired".format(
                              self.name, self.pidfile, self.process_timeout), errno = errno.ENOENT)
         
-    @asyncio.coroutine
-    def _wait_kill_on_exit(self):
+    async def _wait_kill_on_exit(self):
         yield from self.wait()
         self._kill_system()
 
@@ -576,8 +569,7 @@ class SubProcess(object):
 
         asyncio.ensure_future(self._abnormal_exit(code))
     
-    @asyncio.coroutine
-    def _abnormal_exit(self, code):
+    async def _abnormal_exit(self, code):
         service = self.service
 
         if service.exit_kills:
@@ -630,8 +622,7 @@ class SubProcess(object):
         self._pending.add(future)
         future.add_done_callback(lambda f: self._pending.discard(future))
 
-    @asyncio.coroutine
-    def reset(self, dependents = False, enable = False, restarts_ok = False):
+    async def reset(self, dependents = False, enable = False, restarts_ok = False):
         self.logdebug("{0} received reset", self.name)
 
         if self._exit_event:
@@ -665,12 +656,10 @@ class SubProcess(object):
                 if not p.ready and (enable or p.enabled):
                     yield from p.reset(dependents, enable, restarts_ok)
                 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         yield from self.reset(restarts_ok = True)
         
-    @asyncio.coroutine
-    def final_stop(self):
+    async def final_stop(self):
         "Called when the whole system is killed, but before drastic measures are taken."
         self._exit_event = None
         self.terminate()
@@ -701,8 +690,7 @@ class SubProcess(object):
 
         self._pid = None
         
-    @asyncio.coroutine
-    def do_startup_pause(self):
+    async def do_startup_pause(self):
         """
         Wait a short time just to see if the process errors out immediately.  This avoids a retry loop
         and catches any immediate failures now.  Can be used by process implementations if needed.
@@ -722,8 +710,7 @@ class SubProcess(object):
                 raise ChProcessError("{0} failed on start-up with result '{1}'".format(self.name, result),
                                      resultcode = result)
 
-    @asyncio.coroutine
-    def timed_wait(self, timeout, func = None):
+    async def timed_wait(self, timeout, func = None):
         """
         Timed wait waits for process completion.  If process completion occurs normally, the
         returncode for process startup is returned.
@@ -745,8 +732,7 @@ class SubProcess(object):
 
         return result
 
-    @asyncio.coroutine
-    def wait(self):
+    async def wait(self):
         proc = self._proc
 
         if self._exit_event:
@@ -827,8 +813,7 @@ class SubProcessFamily(lazydict):
 
         return msg
 
-    @asyncio.coroutine
-    def run(self, servicelist = None):
+    async def run(self, servicelist = None):
         """
         Runs the family, starting up services in dependency order.  If any problems
         occur, an exception is raised.  Returns True if any attempts were made to
@@ -857,8 +842,7 @@ class SubProcessFamily(lazydict):
             result.add(serv)
         return result
 
-    @asyncio.coroutine
-    def start(self, service_names, force = False, wait = False, enable = False):
+    async def start(self, service_names, force = False, wait = False, enable = False):
         slist = self._lookup_services(service_names)
 
         not_enab = [s for s in slist if not s.enabled]
@@ -891,15 +875,13 @@ class SubProcessFamily(lazydict):
         else:
             yield from self.run(slist)
 
-    @asyncio.coroutine
-    def _queued_start(self, slist, names):
+    async def _queued_start(self, slist, names):
         try:
             yield from self.run(slist)
         except Exception as ex:
             error("queued start (for {0}) failed: {1}", names, ex)
             
-    @asyncio.coroutine
-    def stop(self, service_names, force = False, wait = False, disable = False):
+    async def stop(self, service_names, force = False, wait = False, disable = False):
         slist = self._lookup_services(service_names)
         started = [s for s in slist if s.stoppable]
 
@@ -916,8 +898,7 @@ class SubProcessFamily(lazydict):
                 if disable:
                     s.enabled = False
 
-    @asyncio.coroutine
-    def _queued_stop(self, slist, names, disable):
+    async def _queued_stop(self, slist, names, disable):
         try:
             for s in slist:
                 yield from s.stop()
@@ -926,8 +907,7 @@ class SubProcessFamily(lazydict):
         except Exception as ex:
             error("queued stop (for {0}) failed: {1}", names, ex)
 
-    @asyncio.coroutine
-    def reset(self, service_names, force = False, wait = False):
+    async def reset(self, service_names, force = False, wait = False):
         slist = self._lookup_services(service_names)
 
         if not force:
@@ -941,22 +921,19 @@ class SubProcessFamily(lazydict):
             for s in slist:
                 yield from s.reset(restarts_ok = True)
 
-    @asyncio.coroutine
-    def _queued_reset(self, slist, names):
+    async def _queued_reset(self, slist, names):
         try:
             for s in slist:
                 yield from s.reset(restarts_ok = True)
         except Exception as ex:
             error("queued reset (for {0}) failed: {1}", names, ex)
 
-    @asyncio.coroutine
-    def enable(self, service_names):
+    async def enable(self, service_names):
         slist = self._lookup_services(service_names)
         for s in slist:
             s.enabled = True
 
-    @asyncio.coroutine
-    def disable(self, service_names):
+    async def disable(self, service_names):
         slist = self._lookup_services(service_names)
         for s in slist:
             s.enabled = False

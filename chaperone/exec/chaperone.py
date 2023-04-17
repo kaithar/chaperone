@@ -202,8 +202,7 @@ def main_entry():
 
    # Define here so we can share scope
 
-   @asyncio.coroutine
-   def startup_done():
+   async def startup_done():
 
       if options['--ignore-failures']:
          warn("ignoring failures on all service startups due to --ignore-failures")

@@ -43,15 +43,13 @@ class NotifyListener(Server):
         super().__init__(**kwargs)
         self._socket_name = socket_name
         
-    @asyncio.coroutine
-    def send(self, message):
+    async def send(self, message):
         if not self.server:
             yield from self.run()
 
         self.server[0].sendto(message.encode(), self.bind_name)
 
-    @asyncio.coroutine
-    def server_running(self):
+    async def server_running(self):
         (transport, protocol) = self.server
 
         bindname = self.bind_name
@@ -155,13 +153,11 @@ class NotifySink:
             debug("queueing '{0}={1}' to notify socket '{2}'".format(name, val, self._client.socket_name))
             asyncio.ensure_future(self._do_send("{0}={1}".format(name, val)))
 
-    @asyncio.coroutine
-    def _do_send(self, msg):
+    async def _do_send(self, msg):
         if self._client:
             yield from self._client.send(msg)
 
-    @asyncio.coroutine
-    def connect(self, socket = None):
+    async def connect(self, socket = None):
         """
         Connects to the notify socket.  However, if we can't, it's not considered an error.
         We just return False.

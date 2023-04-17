@@ -122,8 +122,7 @@ class RemoteHandler(LogOutput):
     def getName(cls, config):
         return "syslog_host:" + config.syslog_host
 
-    @asyncio.coroutine
-    def setup_handler(self):
+    async def setup_handler(self):
         loop = asyncio.get_event_loop()
         connect = loop.create_datagram_endpoint(lambda: RemoteClientProtocol(loop),
                                                 remote_addr=(self.config.syslog_host, 514))

@@ -22,8 +22,7 @@ class NotifyProcess(SubProcess):
             self._listener.close()
             self._listener = None
 
-    @asyncio.coroutine
-    def process_prepare_co(self, environ):
+    async def process_prepare_co(self, environ):
         if not self._listener:
             self._listener = NotifyListener('@/chaperone/' + self.service.name,
                                             onNotify = self._notify_received)
@@ -45,18 +44,15 @@ class NotifyProcess(SubProcess):
             self.terminate()
         raise ChProcessError(message)
 
-    @asyncio.coroutine
-    def reset(self, dependents = False, enable = False, restarts_ok = False):
+    async def reset(self, dependents = False, enable = False, restarts_ok = False):
         yield from super().reset(dependents, enable, restarts_ok)
         self._close_listener()
 
-    @asyncio.coroutine
-    def final_stop(self):
+    async def final_stop(self):
         yield from super().final_stop()
         self._close_listener()
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         if self._fut_monitor and not self._fut_monitor.cancelled():
             self._fut_monitor.cancel()
             self._fut_monitor = None
@@ -84,8 +80,7 @@ class NotifyProcess(SubProcess):
                         else:
                             raise ChProcessError("{0} failed with reported error {1}".format(self.name, rc), resultcode = rc)
 
-    @asyncio.coroutine
-    def _monitor_service(self):
+    async def _monitor_service(self):
         """
         We only care about errors here.  The rest is dealt with by having notifications
         occur.

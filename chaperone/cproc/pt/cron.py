@@ -43,8 +43,7 @@ class CronProcess(SubProcess):
     def scheduled(self):
         return self._cron and self._cron.handle
         
-    @asyncio.coroutine
-    def start(self):
+    async def start(self):
         """
         Takes over startup and sets up our cron loop to handle starts instead.
         """
@@ -61,8 +60,7 @@ class CronProcess(SubProcess):
 
         self.loginfo("cron service {0} scheduled using interval spec '{1}'".format(self.name, self.interval))
 
-    @asyncio.coroutine
-    def _cron_hit(self):
+    async def _cron_hit(self):
         if self.enabled:
             if not self.family.system_alive:
                 return
@@ -80,13 +78,11 @@ class CronProcess(SubProcess):
     def stoppable(self):
         return self.scheduled
 
-    @asyncio.coroutine
-    def stop(self):
+    async def stop(self):
         self._cron.stop()
         yield from super().stop()
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         if self._fut_monitor and not self._fut_monitor.cancelled():
             self._fut_monitor.cancel()
             self._fut_monitor = None
@@ -96,8 +92,7 @@ class CronProcess(SubProcess):
         self._fut_monitor = asyncio.ensure_future(self._monitor_service())
         self.add_pending(self._fut_monitor)
 
-    @asyncio.coroutine
-    def _monitor_service(self):
+    async def _monitor_service(self):
         result = yield from self.wait()
         if isinstance(result, int) and result > 0:
             yield from self._abnormal_exit(result)

@@ -6,8 +6,7 @@ class OneshotProcess(SubProcess):
 
     process_timeout = 60.0       # default for a oneshot is 90 seconds
 
-    @asyncio.coroutine
-    def process_started_co(self):
+    async def process_started_co(self):
         result = yield from self.timed_wait(self.process_timeout, self._exit_timeout)
         if result is not None and not result.normal_exit:
             if self.ignore_failures:

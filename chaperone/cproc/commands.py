@@ -36,8 +36,7 @@ class _BaseCommand(object):
             return all(opts.get(name, False) for name in self.command_name)
         return opts.get(self.command_name, False)
 
-    @asyncio.coroutine
-    def exec(self, opts, protocol):
+    async def exec(self, opts, protocol):
         #result = yield from self.do_exec(opts, controller)
         #return str(result)
         self.interactive = protocol.interactive
@@ -59,8 +58,7 @@ class statusCommand(_BaseCommand):
     command_name = "status"
     interactive_only = True
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         serv = controller.services
         msg = STMSG.format(controller, len(serv), len([s for s in serv.values() if s.enabled]))
         msg += "\nServices:\n\n" + str(serv.get_status_formatter().get_formatted_data()) + "\n"
@@ -71,8 +69,7 @@ class dependenciesCommand(_BaseCommand):
     command_name = "dependencies"
     interactive_only = True
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         graph = controller.services.services_config.get_dependency_graph()
         return "\n".join(graph)
 
@@ -80,8 +77,7 @@ class serviceReset(_BaseCommand):
 
     command_name = 'reset'
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         wait = opts['--wait'] and self.interactive
         yield from controller.services.reset(opts['<servname>'], force = opts['--force'], wait = wait)
         return "services reset."
@@ -90,8 +86,7 @@ class serviceEnable(_BaseCommand):
 
     command_name = 'enable'
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         yield from controller.services.enable(opts['<servname>'])
         return "services enabled."
 
@@ -99,8 +94,7 @@ class serviceDisable(_BaseCommand):
 
     command_name = 'disable'
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         yield from controller.services.disable(opts['<servname>'])
         return "services disabled."
 
@@ -108,8 +102,7 @@ class serviceStart(_BaseCommand):
 
     command_name = 'start'
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         wait = opts['--wait'] and self.interactive
         yield from controller.services.start(opts['<servname>'], force = opts['--force'],
                                              wait = wait,
@@ -122,8 +115,7 @@ class serviceStop(_BaseCommand):
 
     command_name = 'stop'
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         wait = opts['--wait'] and self.interactive
         yield from controller.services.stop(opts['<servname>'], force = opts['--force'], 
                                             wait = wait,
@@ -136,8 +128,7 @@ class loglevelCommand(_BaseCommand):
 
     command_name = "loglevel"
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         lev = opts['<level>']
         if lev is None:
             curlev = controller.force_log_level()
@@ -157,8 +148,7 @@ class shutdownCommand(_BaseCommand):
 
     command_name = "shutdown"
 
-    @asyncio.coroutine
-    def do_exec(self, opts, controller):
+    async def do_exec(self, opts, controller):
         delay = opts['<delay>']
 
         if delay is None or delay.lower() == "now":
@@ -196,8 +186,7 @@ class CommandProtocol(ServerProtocol):
 
     interactive = False
 
-    @asyncio.coroutine
-    def _interpret_command(self, msg):
+    async def _interpret_command(self, msg):
         if not msg:
             return
         try:
@@ -215,8 +204,7 @@ class CommandProtocol(ServerProtocol):
             result = "RESULT\n" + result
         return result
 
-    @asyncio.coroutine
-    def _command_task(self, cmd, interactive = False):
+    async def _command_task(self, cmd, interactive = False):
         result = yield from self._interpret_command(cmd)
         if interactive:
             self.transport.write(result.encode())
@@ -237,8 +225,7 @@ class _InteractiveServer(Server):
         return asyncio.get_event_loop().create_unix_server(CommandProtocol.buildProtocol(self, interactive=True), 
                                                            path=CHAP_SOCK)
 
-    @asyncio.coroutine
-    def server_running(self):
+    async def server_running(self):
         os.chmod(CHAP_SOCK, 0o777)
 
     def close(self):
@@ -262,8 +249,7 @@ class CommandServer(Server):
         self.controller = controller
         self._fifoname = filename
 
-    @asyncio.coroutine
-    def server_running(self):
+    async def server_running(self):
         self._iserve = _InteractiveServer()
         self._iserve.controller = self.controller # share this with our domain socket
         yield from self._iserve.run()

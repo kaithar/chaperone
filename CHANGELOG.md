@@ -1,3 +1,7 @@
+
+- Replaced use: asyncio.async was deprecated in 3.4.4 and removed in 3.7, replaced with ensure_future and targetting 3.4+
+- Replaced use: asyncio.coroutine was deprecated in 3.8 and removed in 3.11, replaced with `async def` and targetting 3.7+
+
 ## 0.3.00 (2015-10-04)
 
 This is a major release that adds a number of important features and refinements.   Most importantly, a new automated test harness that simulates various process mixes has been added to the release process to assure that Chaperone manages processes in a consistent and reliable way from release to release.
