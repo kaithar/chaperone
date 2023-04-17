@@ -17,7 +17,7 @@ class InetdServiceProtocol(ServerProtocol):
         self._fd = sock.detach()
         sock.close()
 
-        future = asyncio.async(self.start_socket_process(self._fd))
+        future = asyncio.ensure_future(self.start_socket_process(self._fd))
         future.add_done_callback(self._done)
 
         self.process.counter += 1

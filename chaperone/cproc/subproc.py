@@ -478,12 +478,12 @@ class SubProcess(object):
         self.pid = proc.pid
 
         if service.stdout == 'log':
-            self.add_pending(asyncio.async(_process_logger(proc.stdout, 'stdout', self)))
+            self.add_pending(asyncio.ensure_future(_process_logger(proc.stdout, 'stdout', self)))
         if service.stderr == 'log':
-            self.add_pending(asyncio.async(_process_logger(proc.stderr, 'stderr', self)))
+            self.add_pending(asyncio.ensure_future(_process_logger(proc.stderr, 'stderr', self)))
 
         if service.exit_kills and not self.defer_exit_kills:
-            self.add_pending(asyncio.async(self._wait_kill_on_exit()))
+            self.add_pending(asyncio.ensure_future(self._wait_kill_on_exit()))
 
         yield from self.process_started_co()
 
@@ -574,7 +574,7 @@ class SubProcess(object):
         if code.normal_exit or self.kill_signal == code.signal:
             return
 
-        asyncio.async(self._abnormal_exit(code))
+        asyncio.ensure_future(self._abnormal_exit(code))
     
     @asyncio.coroutine
     def _abnormal_exit(self, code):
@@ -602,7 +602,7 @@ class SubProcess(object):
                 if controller.system_alive:
                     yield from self.reset()
                     #yield from self.start()
-                    f = asyncio.async(self.start()) # queue it since we will just return here
+                    f = asyncio.ensure_future(self.start())  # queue it since we will just return here
                     f.add_done_callback(self._restart_callback)
                 return
 
@@ -621,7 +621,7 @@ class SubProcess(object):
             self.logdebug("{0} restart succeeded", self.name)
         else:
             self.logwarn("{0} restart failed: {1}", self.name, ex)
-            asyncio.async(self._abnormal_exit(self._proc and self._proc.returncode))
+            asyncio.ensure_future(self._abnormal_exit(self._proc and self._proc.returncode))
 
     def _kill_system(self):
         self.family.controller.kill_system()
@@ -887,7 +887,7 @@ class SubProcessFamily(lazydict):
             yield from s.reset(dependents=True, enable=enable, restarts_ok=True)
 
         if not wait:
-            asyncio.async(self._queued_start(slist, service_names))
+            asyncio.ensure_future(self._queued_start(slist, service_names))
         else:
             yield from self.run(slist)
 
@@ -909,7 +909,7 @@ class SubProcessFamily(lazydict):
                                 ", ".join([s.shortname for s in slist if not s.stoppable]))
 
         if not wait:
-            asyncio.async(self._queued_stop(slist, service_names, disable))
+            asyncio.ensure_future(self._queued_stop(slist, service_names, disable))
         else:
             for s in slist:
                 yield from s.stop()
@@ -936,7 +936,7 @@ class SubProcessFamily(lazydict):
                 raise Exception("can't reset services which are running: " + ", ".join([s.shortname for s in running]))
 
         if not wait:
-            asyncio.async(self._queued_reset(slist, service_names))
+            asyncio.ensure_future(self._queued_reset(slist, service_names))
         else:
             for s in slist:
                 yield from s.reset(restarts_ok = True)

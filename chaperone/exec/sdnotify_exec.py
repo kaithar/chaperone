@@ -175,7 +175,7 @@ class SDNotifyExec:
         yield from self.parent_client.send("{0}={1}".format(name, value))
 
     def send_to_proxy(self, name, value):
-        asyncio.async(self._do_proxy_send(name, value))
+        asyncio.ensure_future(self._do_proxy_send(name, value))
 
     def notify_received(self, which, name, value):
         self.send_to_proxy(name, value)
@@ -217,7 +217,7 @@ class SDNotifyExec:
         proc = yield from create
 
         if self.timeout:
-            asyncio.async(self._notify_timeout())
+            asyncio.ensure_future(self._notify_timeout())
 
         exitcode = yield from proc.wait()
         if not self.exitcode:   # may have arrived from ERRNO
@@ -248,7 +248,7 @@ def main_entry():
     options = docopt(__doc__, options_first=True, version=VERSION_MESSAGE)
 
     mainclass = SDNotifyExec(options)
-    asyncio.async(mainclass.run())
+    asyncio.ensure_future(mainclass.run())
 
     loop.run_forever()
     loop.close()

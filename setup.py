@@ -3,8 +3,8 @@ import sys
 import subprocess
 from setuptools import setup, find_packages
 
-if sys.version_info < (3,):
-    print("You must run setup.py with Python 3 only.  Python 2 distributions are not supported.")
+if sys.version_info < (3,4):
+    print("You must run setup.py with Python 3.4+ only.")
     exit(1)
 
 ourdir = os.path.dirname(__file__)

@@ -224,11 +224,11 @@ class CommandProtocol(ServerProtocol):
 
     def data_received(self, data):
         if self.interactive:
-            asyncio.async(self._command_task(data.decode(), True))
+            asyncio.ensure_future(self._command_task(data.decode(), True))
         else:
             commands = data.decode().split("\n")
             for c in commands:
-                asyncio.async(self._command_task(c))
+                asyncio.ensure_future(self._command_task(c))
 
 class _InteractiveServer(Server):
 

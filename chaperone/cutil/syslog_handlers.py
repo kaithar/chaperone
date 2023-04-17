@@ -133,7 +133,7 @@ class RemoteHandler(LogOutput):
 
     def __init__(self, config):
         super().__init__(config)
-        self._pending = asyncio.async(self.setup_handler())
+        self._pending = asyncio.ensure_future(self.setup_handler())
 
     def write(self, data):
         if self._protocol:
