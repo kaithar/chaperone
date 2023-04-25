@@ -16,28 +16,3 @@ def PATCH_CLASS(module, clsname, member, oldstr, newfunc):
             setattr(cls, member, newfunc)
     except Exception:
         pass
-
-
-# PATCH  for Issue23140: https://bugs.python.org/issue23140
-# WHERE  asyncio
-# IMPACT Eliminates exceptions during process termination
-# WHY    There is no workround except upgrading to Python 3.4.3, which dramatically affects
-#        distro compatibility.  Mostly, this benefits Ubuntu 14.04LTS.
-
-OLD_process_exited = """    def process_exited(self):
-        # wake up futures waiting for wait()
-        returncode = self._transport.get_returncode()
-        while self._waiters:
-            waiter = self._waiters.popleft()
-            waiter.set_result(returncode)
-"""
-
-def NEW_process_exited(self):
-    # wake up futures waiting for wait()
-    returncode = self._transport.get_returncode()
-    while self._waiters:
-        waiter = self._waiters.popleft()
-        if not waiter.cancelled():
-            waiter.set_result(returncode)
-
-PATCH_CLASS('asyncio.subprocess', 'SubprocessStreamProtocol', 'process_exited', OLD_process_exited, NEW_process_exited)

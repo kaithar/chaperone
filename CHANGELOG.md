@@ -1,4 +1,5 @@
 
+- Breaking: Nuked the patch for 3.4.2 and prior, don't need that stuff on pretty much any modern system.
 - Breaking: Due to modernising of the asyncio use, minimum Python version should be considered 3.7+ though it might work on 3.5+
 - Replaced use: asyncio.async was deprecated in 3.4.4 and removed in 3.7, replaced with ensure_future
 - Replaced use: asyncio.coroutine was deprecated in 3.8 and removed in 3.11, replaced with `async def`
